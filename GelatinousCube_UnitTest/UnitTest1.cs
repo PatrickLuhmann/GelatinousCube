@@ -22,6 +22,85 @@ namespace GelatinousCube_UnitTest
 		}
 
 		[TestMethod]
+		public void Constructor_SmallestGame()
+		{
+			// Three spaces is what is possible with the default dice for
+			// starting positions. Two pieces are needed for an actual race.
+			Game game = new Game(3, 2);
+
+			Assert.AreEqual(3, game.NumSpaces);
+			Assert.AreEqual(3, game.Spaces.Length);
+			foreach (var list in game.Spaces)
+			{
+				Assert.AreEqual(0, list.Count);
+			}
+
+			// TODO: Something for results? Or should I not worry about validating implementation details?
+		}
+
+		[TestMethod]
+		[ExpectedException(typeof(System.ArgumentException))]
+		public void PlacePiece_Duplicate()
+		{
+			Game game = new Game(11, 3);
+			game.PlacePiece(0, 1);
+			game.PlacePiece(1, 2);
+			game.PlacePiece(2, 3);
+
+			// Duplicate piece ID.
+			game.PlacePiece(0, 5);
+		}
+
+		[TestMethod]
+		[ExpectedException(typeof(System.ArgumentException))]
+		public void PlacePiece_BadSpaceTooHigh()
+		{
+			Game game = new Game(11, 3);
+
+			// Space too high.
+			game.PlacePiece(0, 12);
+		}
+
+		[TestMethod]
+		[ExpectedException(typeof(System.ArgumentException))]
+		public void PlacePiece_BadSpaceZero()
+		{
+			Game game = new Game(11, 3);
+
+			// Space #0 is not valid. From the user's point of view, the first space
+			// is #1.
+			game.PlacePiece(0, 0);
+		}
+
+		[TestMethod]
+		[ExpectedException(typeof(System.ArgumentException))]
+		public void PlacePiece_BadSpaceNegative()
+		{
+			Game game = new Game(11, 3);
+
+			// Negative numbers are not valid.
+			game.PlacePiece(0, -1);
+		}
+
+		[TestMethod]
+		public void PlacePiece_AllGood()
+		{
+			Game game = new Game(16, 5);
+
+			game.PlacePiece(0, 1);
+			game.PlacePiece(1, 1);
+			game.PlacePiece(2, 2);
+			game.PlacePiece(3, 2);
+			game.PlacePiece(4, 3);
+
+			Assert.AreEqual(1, game.Spaces[0][0]);
+			Assert.AreEqual(0, game.Spaces[0][1]);
+			Assert.AreEqual(3, game.Spaces[1][0]);
+			Assert.AreEqual(2, game.Spaces[1][1]);
+			Assert.AreEqual(4, game.Spaces[2][0]);
+		}
+
+		[TestMethod]
 		public void AddInFront()
 		{
 			Game game = new Game();
@@ -174,6 +253,14 @@ namespace GelatinousCube_UnitTest
 			Assert.AreEqual(2, game.Spaces[4].Count);
 			Assert.AreEqual(2, game.Spaces[4][0]);
 			Assert.AreEqual(9, game.Spaces[4][1]);
+		}
+
+		[TestMethod]
+		public void ExecuteTurn()
+		{
+			Game game = new Game();
+
+
 		}
 	}
 }

@@ -13,19 +13,22 @@ namespace GelatinousCube_Console
 		{
 			Console.WriteLine("Welcome to the GelatinousCube console.");
 
-			// Create a new game.
-			Game MyGame = new Game();
-			List<int> camels = new List<int>();
+			// Create a new game with 10 spaces and 2 pieces.
+			Game MyGame = new Game(10, 2);
 
-			// Place camel #0 in space #1 (the second space).
-			camels.Add(0);
-			MyGame.AddInFront(camels, 1);
+			// Place piece #0 in space #2 (the second space).
+			MyGame.PlacePiece(0, 1);
 
-			// Place camel #1 in space #0 (the first space).
-			camels[0] = 1;
-			MyGame.AddInFront(camels, 0);
+			// Place piece #1 in space #1 (the first space).
+			MyGame.PlacePiece(1, 0);
 
 			DisplayGameBoard(MyGame);
+
+			GameResults[] TurnResults = MyGame.ExecuteTurn();
+
+			DisplayGameBoard(MyGame);
+
+			DisplayResults(TurnResults);
 		}
 
 		static void DisplayGameBoard(Game game)
@@ -38,6 +41,14 @@ namespace GelatinousCube_Console
 					Console.Write("{0}, ", camel);
 				}
 				Console.WriteLine();
+			}
+		}
+
+		static void DisplayResults(GameResults[] results)
+		{
+			foreach (var res in results)
+			{
+				Console.WriteLine("Piece {0}: {1} in first place, {2} in second place.", res.Id, res.FirstPlace, res.SecondPlace);
 			}
 		}
 	}
