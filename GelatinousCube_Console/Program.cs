@@ -17,25 +17,25 @@ namespace GelatinousCube_Console
 			Game MyGame = new Game(10, 2);
 
 			// Place piece #0 in space #2 (the second space).
-			MyGame.PlacePiece(0, 1);
+			MyGame.PlacePiece(0, 2);
 
 			// Place piece #1 in space #1 (the first space).
-			MyGame.PlacePiece(1, 0);
+			MyGame.PlacePiece(1, 1);
 
 			DisplayGameBoard(MyGame);
 
 			GameResults[] TurnResults = MyGame.ExecuteTurn();
 
-			DisplayGameBoard(MyGame);
-
 			DisplayResults(TurnResults);
+
+			DisplayGameBoard(MyGame);
 		}
 
 		static void DisplayGameBoard(Game game)
 		{
 			for (int i = 0; i < game.NumSpaces; i++)
 			{
-				Console.Write("{0}: ", i);
+				Console.Write("{0}: ", i+1);
 				foreach (int camel in game.Spaces[i])
 				{
 					Console.Write("{0}, ", camel);
@@ -48,7 +48,11 @@ namespace GelatinousCube_Console
 		{
 			foreach (var res in results)
 			{
-				Console.WriteLine("Piece {0}: {1} in first place, {2} in second place.", res.Id, res.FirstPlace, res.SecondPlace);
+				Console.WriteLine("Piece {0} at {3}: {1} in first place, {2} in second place.",
+					res.Id,
+					res.FirstPlace,
+					res.SecondPlace,
+					res.Space);
 			}
 		}
 	}

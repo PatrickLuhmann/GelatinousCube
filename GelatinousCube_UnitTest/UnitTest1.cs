@@ -101,166 +101,124 @@ namespace GelatinousCube_UnitTest
 		}
 
 		[TestMethod]
-		public void AddInFront()
+		public void PopPieces_OnePiece()
 		{
-			Game game = new Game();
+			Game game = new Game(10, 4);
+			PrivateObject pvt = new PrivateObject(game);
 
-			// Add to an empty space.
-			List<int> justFive = new List<int>();
-			justFive.Add(5);
-			game.AddInFront(justFive, 7);
+			game.PlacePiece(100, 6);
+			game.PlacePiece(1, 5);
+			game.PlacePiece(2, 7);
+			game.PlacePiece(3, 1);
 
-			for (int i = 0; i < game.Spaces.Length; i++)
-			{
-				if (i == 7)
-				{
-					Assert.AreEqual(1, game.Spaces[i].Count);
-					Assert.AreEqual(5, game.Spaces[i][0]);
-				}
-				else
-				{
-					Assert.AreEqual(0, game.Spaces[i].Count);
-				}
-			}
+			List<int> pieces = (List<int>)pvt.Invoke("PopPieces", 6, 100);
 
-			// Add to a non-empty space.
-			List<int> justOne = new List<int>();
-			justOne.Add(1);
-			game.AddInFront(justOne, 7);
-
-			for (int i = 0; i < game.Spaces.Length; i++)
-			{
-				if (i == 7)
-				{
-					Assert.AreEqual(2, game.Spaces[i].Count);
-					Assert.AreEqual(1, game.Spaces[i][0]);
-					Assert.AreEqual(5, game.Spaces[i][1]);
-				}
-				else
-				{
-					Assert.AreEqual(0, game.Spaces[i].Count);
-				}
-			}
-
-			// Add multiple to a non-empty space.
-			List<int> multiNums = new List<int>();
-			multiNums.Add(2);
-			multiNums.Add(3);
-			game.AddInFront(multiNums, 7);
-
-			for (int i = 0; i < game.Spaces.Length; i++)
-			{
-				if (i == 7)
-				{
-					Assert.AreEqual(4, game.Spaces[i].Count);
-					Assert.AreEqual(2, game.Spaces[i][0]);
-					Assert.AreEqual(3, game.Spaces[i][1]);
-					Assert.AreEqual(1, game.Spaces[i][2]);
-					Assert.AreEqual(5, game.Spaces[i][3]);
-				}
-				else
-				{
-					Assert.AreEqual(0, game.Spaces[i].Count);
-				}
-			}
+			Assert.AreEqual(1, pieces.Count);
+			Assert.AreEqual(100, pieces[0]);
 		}
 
 		[TestMethod]
-		public void AddInBack()
+		public void PopPieces_TwoOfTwo()
 		{
-			Game game = new Game();
+			Game game = new Game(10, 4);
+			PrivateObject pvt = new PrivateObject(game);
 
-			// Add to an empty space.
-			List<int> justFive = new List<int>();
-			justFive.Add(5);
-			game.AddInBack(justFive, 7);
+			game.PlacePiece(100, 7);
+			game.PlacePiece(101, 7);
+			game.PlacePiece(2, 6);
+			game.PlacePiece(3, 8);
 
-			for (int i = 0; i < game.Spaces.Length; i++)
-			{
-				if (i == 7)
-				{
-					Assert.AreEqual(1, game.Spaces[i].Count);
-					Assert.AreEqual(5, game.Spaces[i][0]);
-				}
-				else
-				{
-					Assert.AreEqual(0, game.Spaces[i].Count);
-				}
-			}
+			List<int> pieces = (List<int>)pvt.Invoke("PopPieces", 7, 100);
 
-			// Add to a non-empty space.
-			List<int> justOne = new List<int>();
-			justOne.Add(1);
-			game.AddInBack(justOne, 7);
-
-			for (int i = 0; i < game.Spaces.Length; i++)
-			{
-				if (i == 7)
-				{
-					Assert.AreEqual(2, game.Spaces[i].Count);
-					Assert.AreEqual(5, game.Spaces[i][0]);
-					Assert.AreEqual(1, game.Spaces[i][1]);
-				}
-				else
-				{
-					Assert.AreEqual(0, game.Spaces[i].Count);
-				}
-			}
-
-			// Add multiple to a non-empty space.
-			List<int> multiNums = new List<int>();
-			multiNums.Add(2);
-			multiNums.Add(3);
-			game.AddInBack(multiNums, 7);
-
-			for (int i = 0; i < game.Spaces.Length; i++)
-			{
-				if (i == 7)
-				{
-					Assert.AreEqual(4, game.Spaces[i].Count);
-					Assert.AreEqual(5, game.Spaces[i][0]);
-					Assert.AreEqual(1, game.Spaces[i][1]);
-					Assert.AreEqual(2, game.Spaces[i][2]);
-					Assert.AreEqual(3, game.Spaces[i][3]);
-				}
-				else
-				{
-					Assert.AreEqual(0, game.Spaces[i].Count);
-				}
-			}
+			Assert.AreEqual(2, pieces.Count);
+			Assert.AreEqual(101, pieces[0]);
+			Assert.AreEqual(100, pieces[1]);
 		}
 
 		[TestMethod]
-		public void Extract()
+		public void PopPieces_TwoOfThree()
 		{
-			Game game = new Game();
+			Game game = new Game(10, 4);
+			PrivateObject pvt = new PrivateObject(game);
 
-			// Create a space with multiple items.
-			List<int> bigList = new List<int>();
-			bigList.Add(1);
-			bigList.Add(6);
-			bigList.Add(2);
-			bigList.Add(9);
-			game.AddInFront(bigList, 4);
+			game.PlacePiece(100, 10);
+			game.PlacePiece(101, 10);
+			game.PlacePiece(99, 10);
+			game.PlacePiece(3, 8);
 
-			// Extract the first two items.
-			List<int> subList = game.Extract(2, 4);
+			List<int> pieces = (List<int>)pvt.Invoke("PopPieces", 10, 101);
 
-			Assert.AreEqual(2, subList.Count);
-			Assert.AreEqual(1, subList[0]);
-			Assert.AreEqual(6, subList[1]);
-
-			Assert.AreEqual(2, game.Spaces[4].Count);
-			Assert.AreEqual(2, game.Spaces[4][0]);
-			Assert.AreEqual(9, game.Spaces[4][1]);
+			Assert.AreEqual(2, pieces.Count);
+			Assert.AreEqual(99, pieces[0]);
+			Assert.AreEqual(101, pieces[1]);
 		}
 
 		[TestMethod]
-		public void ExecuteTurn()
+		public void AddPiecesToFront_TwoToEmptySpace()
 		{
-			Game game = new Game();
+			Game game = new Game(10, 4);
+			PrivateObject pvt = new PrivateObject(game);
 
+			// We need to use the API so that the results records will
+			// be updated correctly.
+			game.PlacePiece(100, 2);
+			game.PlacePiece(200, 2);
+			game.PlacePiece(300, 2);
+			game.PlacePiece(400, 2);
+			List<int> pieces = (List<int>)pvt.Invoke("PopPieces", 2, 300);
 
+			pvt.Invoke("AddPiecesToFront", 1, pieces);
+
+			// Check the pieces on the target space.
+			// For each piece, check for the correct ID as
+			// well as the correct space in the GameResults object.
+			Assert.AreEqual(2, game.Spaces[0].Count);
+
+			Assert.AreEqual(300, game.Spaces[0][1]);
+			var res300 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 300);
+			Assert.AreEqual(1, res300.Space);
+
+			Assert.AreEqual(400, game.Spaces[0][0]);
+			var res400 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 400);
+			Assert.AreEqual(1, res400.Space);
+		}
+
+		[TestMethod]
+		public void AddPiecesToFront_OneOnThree()
+		{
+			Game game = new Game(10, 4);
+			PrivateObject pvt = new PrivateObject(game);
+
+			// We need to use the API so that the results records will
+			// be updated correctly.
+			game.PlacePiece(100, 10);
+			game.PlacePiece(200, 10);
+			game.PlacePiece(300, 1);
+			game.PlacePiece(400, 10);
+			List<int> pieces = (List<int>)pvt.Invoke("PopPieces", 1, 300);
+
+			pvt.Invoke("AddPiecesToFront", 10, pieces);
+
+			// Check the pieces on the target space.
+			// For each piece, check for the correct ID as
+			// well as the correct space in the GameResults object.
+			Assert.AreEqual(4, game.Spaces[10 - 1].Count);
+
+			Assert.AreEqual(300, game.Spaces[10 - 1][0]);
+			var res300 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 300);
+			Assert.AreEqual(10, res300.Space);
+
+			Assert.AreEqual(400, game.Spaces[10 - 1][1]);
+			var res400 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 400);
+			Assert.AreEqual(10, res400.Space);
+
+			Assert.AreEqual(200, game.Spaces[10 - 1][2]);
+			var res200 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 200);
+			Assert.AreEqual(10, res200.Space);
+
+			Assert.AreEqual(100, game.Spaces[10 - 1][3]);
+			var res100 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 100);
+			Assert.AreEqual(10, res100.Space);
 		}
 	}
 }

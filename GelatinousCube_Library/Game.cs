@@ -12,6 +12,7 @@ namespace GelatinousCube_Library
 		int numSpaces;
 		int numPieces;
 		GameResults[] results;
+		Random rng;
 
 		public Game(int spaces, int pieces)
 		{
@@ -27,10 +28,9 @@ namespace GelatinousCube_Library
 			for (int i = 0; i < results.Length; i++)
 			{
 				results[i] = new GameResults();
-				results[i].Id = -1;
-				results[i].FirstPlace = -1.0M;
-				results[i].SecondPlace = -1.0M;
 			}
+
+			rng = new Random(0);
 		}
 
 		public Game() : this(10, 5) { }
@@ -62,41 +62,93 @@ namespace GelatinousCube_Library
 			// to use -1 or any other value for their own purposes.
 			var empty = Array.Find(results, r => r.FirstPlace == -1.0M);
 			empty.Id = id;
+			empty.Space = space;
 			empty.FirstPlace = 0;
 			empty.SecondPlace = 0;
 
 			// Put the piece on its spot. It will be at the front (i.e. on top).
-			AddInFront(id, space);
+			gameBoard[space - 1].Insert(0, id);
 		}
 
 		public GameResults[] ExecuteTurn()
 		{
+			DetermineTurnOrder();
+
+			for (int i = 0; i < numPieces; i++)
+			{
+				// Grab the moving piece (and any pieces on top of it).
+				List<int> movingPieces = PopPieces(results[i].Space, results[i].Id);
+
+				int roll = rng.Next(1, 4);
+				int newSpace = results[i].Space + roll;
+
+				if (newSpace > numSpaces)
+				{
+					// TODO: Make sure to handle crossing the finish line.
+
+					// Obvioiusly, can't put the pieces back on the board because
+					// the new space doesn't exist.
+
+					// Now that the game is over, do not process any more pieces.
+					break;
+				}
+
+				
+				// Move the pieces to their new space.
+				AddPiecesToFront(newSpace, movingPieces);
+			}
+
 			return results;
 		}
 
-		// TODO: This 'space' is 1-based. Make them all consistent.
-		void AddInFront(int id, int space)
+		/// <summary>
+		/// Remove from the given space the specified piece, along with all above it.
+		/// </summary>
+		/// <param name="space">The space containing the piece (1-based).</param>
+		/// <param name="id">The ID of the piece to pop.</param>
+		/// <returns></returns>
+		private List<int> PopPieces(int space, int id)
 		{
-			gameBoard[space - 1].Insert(0, id);
-		}
+			// Find the target piece on the space.
+			int pos = gameBoard[space - 1].IndexOf(id);
+			// Get the sub-list from the first to the target.
+			List<int> subList = gameBoard[space - 1].GetRange(0, pos + 1);
+			// Now remove them from the space.
+			gameBoard[space - 1].RemoveRange(0, pos + 1);
 
-		// TODO: This 'space' is 0-based. Make them all consistent.
-		// TODO: Make these private or eliminate them. The user is not going to manipulate the Game state directly like this.
-		public void AddInFront(List<int> ids, int space)
-		{
-			gameBoard[space].InsertRange(0, ids);
-		}
-
-		public void AddInBack(List<int> ids, int space)
-		{
-			gameBoard[space].AddRange(ids);
-		}
-
-		public List<int> Extract(int num, int space)
-		{
-			List<int> subList = gameBoard[space].GetRange(0, num);
-			gameBoard[space].RemoveRange(0, num);
 			return subList;
+		}
+
+		/// <summary>
+		/// Add the given list of pieces to the given space.
+		/// </summary>
+		/// <param name="space">The target space (1-based).</param>
+		/// <param name="pieces">The list of pieces.</param>
+		private void AddPiecesToFront(int space, List<int> pieces)
+		{
+			// Insert the list of pieces into the target game board list.
+			gameBoard[space - 1].InsertRange(0, pieces);
+
+			// Update the location of the moved pieces.
+			foreach(var p in pieces)
+			{
+				var res = Array.Find(results, r => r.Id == p);
+				res.Space = space;
+			}
+		}
+
+		private void DetermineTurnOrder()
+		{
+			for (int i = 0; i < numPieces - 1; i++)
+			{
+				int pos = rng.Next(i, numPieces);
+				if (pos != i)
+				{
+					GameResults tmp = results[i];
+					results[i] = results[pos];
+					results[pos] = tmp;
+				}
+			}
 		}
 
 		// Public properties
@@ -108,7 +160,16 @@ namespace GelatinousCube_Library
 	public class GameResults
 	{
 		public int Id;
+		public int Space;
 		public decimal FirstPlace;
 		public decimal SecondPlace;
+
+		public GameResults()
+		{
+			Id = -1;
+			Space = 0; // start off the board by default.
+			FirstPlace = -1.0M;
+			SecondPlace = -1.0M;
+		}
 	}
 }
