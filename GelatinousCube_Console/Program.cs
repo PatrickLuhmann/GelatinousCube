@@ -13,6 +13,8 @@ namespace GelatinousCube_Console
 		{
 			Console.WriteLine("Welcome to the GelatinousCube console.");
 
+#if false
+
 			// Create a new game with 10 spaces and 2 pieces.
 			Game MyGame = new Game(10, 2);
 
@@ -29,6 +31,26 @@ namespace GelatinousCube_Console
 			DisplayResults(TurnResults);
 
 			DisplayGameBoard(MyGame);
+#endif
+
+			// Simulate a turn.
+			Game game2 = new Game(16, 2);
+			// Place the pieces such that they can't interact. This should
+			// help me to judge the accuracy of the simulation.
+			// In this case, P1 will always be in first place and P0 will
+			// always be in second place.
+			// TODO: It feels like I also want the distribution of pieces
+			// at the end of the turn. However, I am not sure how to record
+			// that data. It isn't just the ending space that is important,
+			// it is the stacking within the space.
+			game2.PlacePiece(0, 1);
+			game2.PlacePiece(1, 5);
+			DisplayGameBoard(game2);
+
+			GameResults[] game2Results = game2.SimulateOneTurn();
+
+			DisplayGameBoard(game2);
+			DisplayResults(game2Results);
 		}
 
 		static void DisplayGameBoard(Game game)
@@ -48,7 +70,7 @@ namespace GelatinousCube_Console
 		{
 			foreach (var res in results)
 			{
-				Console.WriteLine("Piece {0} at {3}: {1} in first place, {2} in second place.",
+				Console.WriteLine("Piece {0} at {3}: {1:N2} in first place, {2:N2} in second place.",
 					res.Id,
 					res.FirstPlace,
 					res.SecondPlace,

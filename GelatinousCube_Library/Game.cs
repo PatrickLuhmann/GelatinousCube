@@ -30,6 +30,8 @@ namespace GelatinousCube_Library
 				results[i] = new GameResults();
 			}
 
+			// TODO: Do something more intelligent with the seed.
+			// TODO: Look into abstracting out the RNG so that it can be mocked.
 			rng = new Random(0);
 		}
 
@@ -70,6 +72,23 @@ namespace GelatinousCube_Library
 			gameBoard[space - 1].Insert(0, id);
 		}
 
+		public GameResults[] SimulateOneTurn()
+		{
+			const int numTurns = 2;
+			for (int i = 0; i < numTurns; i++)
+			{
+				ExecuteTurn();
+			}
+
+			foreach (var res in results)
+			{
+				res.FirstPlace = res.FirstPlace / (decimal)numTurns;
+				res.SecondPlace = res.SecondPlace / (decimal)numTurns;
+			}
+
+			return results;
+		}
+
 		public GameResults[] ExecuteTurn()
 		{
 			DetermineTurnOrder();
@@ -80,6 +99,7 @@ namespace GelatinousCube_Library
 				List<int> movingPieces = PopPieces(results[i].Space, results[i].Id);
 
 				int roll = rng.Next(1, 4);
+				Console.WriteLine("Piece {0} rolls a {1}.", results[i].Id, roll);
 				int newSpace = results[i].Space + roll;
 
 				if (newSpace > numSpaces)
@@ -96,6 +116,67 @@ namespace GelatinousCube_Library
 				
 				// Move the pieces to their new space.
 				AddPiecesToFront(newSpace, movingPieces);
+			}
+
+			// Process results
+			bool foundFirst = false;
+			bool foundSecond = false;
+			// Don't need to check array element 0 (space #1) because
+			// it is not possible for a piece to end up there (they have
+			// to start on space #1 or beyond, and they will move forward
+			// at least one space).
+			// TODO: This assumption is not true if oasis tokens are in play,
+			// as there could be a "-1" in space #2 that a piece in space #1
+			// might land on.
+			for (int i = (numSpaces - 1); i > 0; i--)
+			{
+				// Skip empty spaces
+				if (gameBoard[i].Count == 0)
+					continue;
+
+				if (!foundFirst)
+				{
+					// Which piece is on top in this space?
+					int id = gameBoard[i][0];
+					// Find the entry in results that corresponds to this piece.
+					var res = Array.Find(results, r => r.Id == id);
+					// Increment the first place counter.
+					res.FirstPlace++;
+					// Remember that we have found first place.
+					foundFirst = true;
+
+					// Is there another piece in this space?
+					if (gameBoard[i].Count > 1)
+					{
+						id = gameBoard[i][1];
+						// Find the entry in results that corresponds to this piece.
+						res = Array.Find(results, r => r.Id == id);
+						// Increment the second place counter.
+						res.SecondPlace++;
+						// Remember that we have found second place.
+						foundSecond = true;
+
+						// We are done so no need to continue.
+						break;
+					}
+					// No more pieces on this space, so go to the next one.
+					continue;
+				}
+
+				if (!foundSecond)
+				{
+					// Which piece is on top in this space?
+					int id = gameBoard[i][0];
+					// Find the entry in results that corresponds to this piece.
+					var res = Array.Find(results, r => r.Id == id);
+					// Increment the second place counter.
+					res.SecondPlace++;
+					// Remember that we have found second place.
+					foundSecond = true;
+
+					// We are done so no need to continue.
+					break;
+				}
 			}
 
 			return results;
