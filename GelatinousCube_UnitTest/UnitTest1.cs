@@ -93,132 +93,16 @@ namespace GelatinousCube_UnitTest
 			game.PlacePiece(3, 2);
 			game.PlacePiece(4, 3);
 
-			Assert.AreEqual(1, game.Spaces[0][0]);
-			Assert.AreEqual(0, game.Spaces[0][1]);
-			Assert.AreEqual(3, game.Spaces[1][0]);
-			Assert.AreEqual(2, game.Spaces[1][1]);
-			Assert.AreEqual(4, game.Spaces[2][0]);
-		}
-
-		[TestMethod]
-		public void PopPieces_OnePiece()
-		{
-			Game game = new Game(10, 4);
-			PrivateObject pvt = new PrivateObject(game);
-
-			game.PlacePiece(100, 6);
-			game.PlacePiece(1, 5);
-			game.PlacePiece(2, 7);
-			game.PlacePiece(3, 1);
-
-			List<int> pieces = (List<int>)pvt.Invoke("PopPieces", 6, 100);
-
-			Assert.AreEqual(1, pieces.Count);
-			Assert.AreEqual(100, pieces[0]);
-		}
-
-		[TestMethod]
-		public void PopPieces_TwoOfTwo()
-		{
-			Game game = new Game(10, 4);
-			PrivateObject pvt = new PrivateObject(game);
-
-			game.PlacePiece(100, 7);
-			game.PlacePiece(101, 7);
-			game.PlacePiece(2, 6);
-			game.PlacePiece(3, 8);
-
-			List<int> pieces = (List<int>)pvt.Invoke("PopPieces", 7, 100);
-
-			Assert.AreEqual(2, pieces.Count);
-			Assert.AreEqual(101, pieces[0]);
-			Assert.AreEqual(100, pieces[1]);
-		}
-
-		[TestMethod]
-		public void PopPieces_TwoOfThree()
-		{
-			Game game = new Game(10, 4);
-			PrivateObject pvt = new PrivateObject(game);
-
-			game.PlacePiece(100, 10);
-			game.PlacePiece(101, 10);
-			game.PlacePiece(99, 10);
-			game.PlacePiece(3, 8);
-
-			List<int> pieces = (List<int>)pvt.Invoke("PopPieces", 10, 101);
-
-			Assert.AreEqual(2, pieces.Count);
-			Assert.AreEqual(99, pieces[0]);
-			Assert.AreEqual(101, pieces[1]);
-		}
-
-		[TestMethod]
-		public void AddPiecesToFront_TwoToEmptySpace()
-		{
-			Game game = new Game(10, 4);
-			PrivateObject pvt = new PrivateObject(game);
-
-			// We need to use the API so that the results records will
-			// be updated correctly.
-			game.PlacePiece(100, 2);
-			game.PlacePiece(200, 2);
-			game.PlacePiece(300, 2);
-			game.PlacePiece(400, 2);
-			List<int> pieces = (List<int>)pvt.Invoke("PopPieces", 2, 300);
-
-			pvt.Invoke("AddPiecesToFront", 1, pieces);
-
-			// Check the pieces on the target space.
-			// For each piece, check for the correct ID as
-			// well as the correct space in the GameResults object.
-			Assert.AreEqual(2, game.Spaces[0].Count);
-
-			Assert.AreEqual(300, game.Spaces[0][1]);
-			var res300 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 300);
-			Assert.AreEqual(1, res300.Space);
-
-			Assert.AreEqual(400, game.Spaces[0][0]);
-			var res400 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 400);
-			Assert.AreEqual(1, res400.Space);
-		}
-
-		[TestMethod]
-		public void AddPiecesToFront_OneOnThree()
-		{
-			Game game = new Game(10, 4);
-			PrivateObject pvt = new PrivateObject(game);
-
-			// We need to use the API so that the results records will
-			// be updated correctly.
-			game.PlacePiece(100, 10);
-			game.PlacePiece(200, 10);
-			game.PlacePiece(300, 1);
-			game.PlacePiece(400, 10);
-			List<int> pieces = (List<int>)pvt.Invoke("PopPieces", 1, 300);
-
-			pvt.Invoke("AddPiecesToFront", 10, pieces);
-
-			// Check the pieces on the target space.
-			// For each piece, check for the correct ID as
-			// well as the correct space in the GameResults object.
-			Assert.AreEqual(4, game.Spaces[10 - 1].Count);
-
-			Assert.AreEqual(300, game.Spaces[10 - 1][0]);
-			var res300 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 300);
-			Assert.AreEqual(10, res300.Space);
-
-			Assert.AreEqual(400, game.Spaces[10 - 1][1]);
-			var res400 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 400);
-			Assert.AreEqual(10, res400.Space);
-
-			Assert.AreEqual(200, game.Spaces[10 - 1][2]);
-			var res200 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 200);
-			Assert.AreEqual(10, res200.Space);
-
-			Assert.AreEqual(100, game.Spaces[10 - 1][3]);
-			var res100 = Array.Find((GameResults[])pvt.GetField("results"), r => r.Id == 100);
-			Assert.AreEqual(10, res100.Space);
+			Assert.AreEqual(0, game.Pieces[0].Id);
+			Assert.AreEqual(1, game.Pieces[1].Id);
+			Assert.AreEqual(2, game.Pieces[2].Id);
+			Assert.AreEqual(3, game.Pieces[3].Id);
+			Assert.AreEqual(4, game.Pieces[4].Id);
+			Assert.AreEqual(1, game.Pieces[0].StartingSpace);
+			Assert.AreEqual(1, game.Pieces[1].StartingSpace);
+			Assert.AreEqual(2, game.Pieces[2].StartingSpace);
+			Assert.AreEqual(2, game.Pieces[3].StartingSpace);
+			Assert.AreEqual(3, game.Pieces[4].StartingSpace);
 		}
 	}
 }

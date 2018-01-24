@@ -34,7 +34,8 @@ namespace GelatinousCube_Console
 #endif
 
 			// Simulate a turn.
-			Game game2 = new Game(16, 2);
+			Game game2 = new Game(16, 3);
+			
 			// Place the pieces such that they can't interact. This should
 			// help me to judge the accuracy of the simulation.
 			// In this case, P1 will always be in first place and P0 will
@@ -44,8 +45,9 @@ namespace GelatinousCube_Console
 			// that data. It isn't just the ending space that is important,
 			// it is the stacking within the space.
 			game2.PlacePiece(0, 1);
-			game2.PlacePiece(1, 5);
-			DisplayGameBoard(game2);
+			game2.PlacePiece(1, 1);
+			game2.PlacePiece(2, 1);
+			//DisplayGameBoard(game2);
 
 			GameResults[] game2Results = game2.SimulateOneTurn();
 
@@ -58,9 +60,9 @@ namespace GelatinousCube_Console
 			for (int i = 0; i < game.NumSpaces; i++)
 			{
 				Console.Write("{0}: ", i+1);
-				foreach (int camel in game.Spaces[i])
+				foreach (Piece piece in game.Spaces[i])
 				{
-					Console.Write("{0}, ", camel);
+					Console.Write("{0}, ", piece.Id);
 				}
 				Console.WriteLine();
 			}

@@ -8,8 +8,10 @@ namespace GelatinousCube_Library
 {
     public class Game
     {
-		List<int>[] gameBoard; // An array where each element is a list of integers.
+		List<Piece> gamePieces; // The pieces, in order of placement.
+		List<Piece>[] gameBoard; // An array where each element is a list of integers.
 		int numSpaces;
+		// TODO: Can't I remove this and just use the Count of gamePieces?
 		int numPieces;
 		GameResults[] results;
 		Random rng;
@@ -17,13 +19,16 @@ namespace GelatinousCube_Library
 		public Game(int spaces, int pieces)
 		{
 			numSpaces = spaces;
-			gameBoard = new List<int>[numSpaces];
+			gameBoard = new List<Piece>[numSpaces];
 			for (int i = 0; i < numSpaces; i++)
 			{
-				gameBoard[i] = new List<int>();
+				gameBoard[i] = new List<Piece>();
 			}
 
 			numPieces = pieces;
+			// Allocate the list now, but the Piece objects when they are placed.
+			gamePieces = new List<Piece>(numPieces);
+
 			results = new GameResults[numPieces];
 			for (int i = 0; i < results.Length; i++)
 			{
@@ -32,7 +37,7 @@ namespace GelatinousCube_Library
 
 			// TODO: Do something more intelligent with the seed.
 			// TODO: Look into abstracting out the RNG so that it can be mocked.
-			rng = new Random(0);
+			rng = new Random();
 		}
 
 		public Game() : this(10, 5) { }
@@ -50,40 +55,45 @@ namespace GelatinousCube_Library
 
 			// Check to see if this piece has already been placed.
 			bool found = false;
-			foreach (var res in results)
-			{
-				if (id == res.Id)
-					found = true;
-			}
+			found = gamePieces.Exists(p => p.Id == id);
 			if (found)
 				throw new ArgumentException("That piece ID has already been placed.");
 
-			// Find the first empty place and use it for this piece.
-			// By convention, a place is unused when both "place" results are -1.
-			// Can't use id because this an opaque handle provided by the user; they might want
-			// to use -1 or any other value for their own purposes.
-			var empty = Array.Find(results, r => r.FirstPlace == -1.0M);
-			empty.Id = id;
-			empty.Space = space;
-			empty.FirstPlace = 0;
-			empty.SecondPlace = 0;
-
-			// Put the piece on its spot. It will be at the front (i.e. on top).
-			gameBoard[space - 1].Insert(0, id);
+			// Create a new piece and add it to the end. This provides an implicit
+			// order to the pieces; the first in the list is placed first, and thus
+			// will be under any subsequent pieces placed in the same space.
+			gamePieces.Add(new Piece(id, space));
 		}
 
 		public GameResults[] SimulateOneTurn()
 		{
-			const int numTurns = 2;
-			for (int i = 0; i < numTurns; i++)
+			const int numReps = 20000;
+
+			for (int i = 0; i < numReps; i++)
 			{
+				// Clear the board.
+				foreach (var s in gameBoard)
+				{
+					s.Clear();
+				}
+
+				// Place the pieces.
+				foreach (var p in gamePieces)
+				{
+					// Space is 1-based, array is 0-based.
+					gameBoard[p.StartingSpace - 1].Add(p);
+				}
+
+				// Run the simulation.
 				ExecuteTurn();
 			}
 
-			foreach (var res in results)
+			// Calculate the results.
+			for (int idx = 0; idx < results.Length; idx++)
 			{
-				res.FirstPlace = res.FirstPlace / (decimal)numTurns;
-				res.SecondPlace = res.SecondPlace / (decimal)numTurns;
+				results[idx].Id = gamePieces[idx].Id;
+				results[idx].FirstPlace = (decimal)gamePieces[idx].FirstPlaceCount / numReps;
+				results[idx].SecondPlace = (decimal)gamePieces[idx].SecondPlaceCount / numReps;
 			}
 
 			return results;
@@ -91,31 +101,13 @@ namespace GelatinousCube_Library
 
 		public GameResults[] ExecuteTurn()
 		{
-			DetermineTurnOrder();
+			int[] order = DetermineTurnOrder();
 
 			for (int i = 0; i < numPieces; i++)
 			{
-				// Grab the moving piece (and any pieces on top of it).
-				List<int> movingPieces = PopPieces(results[i].Space, results[i].Id);
-
-				int roll = rng.Next(1, 4);
-				Console.WriteLine("Piece {0} rolls a {1}.", results[i].Id, roll);
-				int newSpace = results[i].Space + roll;
-
-				if (newSpace > numSpaces)
-				{
-					// TODO: Make sure to handle crossing the finish line.
-
-					// Obvioiusly, can't put the pieces back on the board because
-					// the new space doesn't exist.
-
-					// Now that the game is over, do not process any more pieces.
+				bool endOfGame = MovePiece(order[i]);
+				if (endOfGame)
 					break;
-				}
-
-				
-				// Move the pieces to their new space.
-				AddPiecesToFront(newSpace, movingPieces);
 			}
 
 			// Process results
@@ -128,7 +120,7 @@ namespace GelatinousCube_Library
 			// TODO: This assumption is not true if oasis tokens are in play,
 			// as there could be a "-1" in space #2 that a piece in space #1
 			// might land on.
-			for (int i = (numSpaces - 1); i > 0; i--)
+			for (int i = numSpaces - 1; i > 0; i--)
 			{
 				// Skip empty spaces
 				if (gameBoard[i].Count == 0)
@@ -137,22 +129,19 @@ namespace GelatinousCube_Library
 				if (!foundFirst)
 				{
 					// Which piece is on top in this space?
-					int id = gameBoard[i][0];
-					// Find the entry in results that corresponds to this piece.
-					var res = Array.Find(results, r => r.Id == id);
+					Piece piece = gameBoard[i][gameBoard[i].Count - 1];
 					// Increment the first place counter.
-					res.FirstPlace++;
+					piece.FirstPlaceCount++;
 					// Remember that we have found first place.
 					foundFirst = true;
 
 					// Is there another piece in this space?
 					if (gameBoard[i].Count > 1)
 					{
-						id = gameBoard[i][1];
-						// Find the entry in results that corresponds to this piece.
-						res = Array.Find(results, r => r.Id == id);
+						// Find the corresponding Piece object.
+						piece = gameBoard[i][gameBoard[i].Count - 2];
 						// Increment the second place counter.
-						res.SecondPlace++;
+						piece.SecondPlaceCount++;
 						// Remember that we have found second place.
 						foundSecond = true;
 
@@ -166,11 +155,9 @@ namespace GelatinousCube_Library
 				if (!foundSecond)
 				{
 					// Which piece is on top in this space?
-					int id = gameBoard[i][0];
-					// Find the entry in results that corresponds to this piece.
-					var res = Array.Find(results, r => r.Id == id);
+					var piece = gameBoard[i][gameBoard[i].Count - 1];
 					// Increment the second place counter.
-					res.SecondPlace++;
+					piece.SecondPlaceCount++;
 					// Remember that we have found second place.
 					foundSecond = true;
 
@@ -182,61 +169,85 @@ namespace GelatinousCube_Library
 			return results;
 		}
 
-		/// <summary>
-		/// Remove from the given space the specified piece, along with all above it.
-		/// </summary>
-		/// <param name="space">The space containing the piece (1-based).</param>
-		/// <param name="id">The ID of the piece to pop.</param>
-		/// <returns></returns>
-		private List<int> PopPieces(int space, int id)
+		public bool MovePiece(int id)
 		{
-			// Find the target piece on the space.
-			int pos = gameBoard[space - 1].IndexOf(id);
-			// Get the sub-list from the first to the target.
-			List<int> subList = gameBoard[space - 1].GetRange(0, pos + 1);
-			// Now remove them from the space.
-			gameBoard[space - 1].RemoveRange(0, pos + 1);
+			Piece movingPiece = gamePieces.Find(p => p.Id == id);
 
-			return subList;
-		}
+			// Roll the die for the piece.
+			// TODO: Might add die characteristics
+			int roll = rng.Next(1, 4);
+//			Console.WriteLine("Piece {0} rolls a {1}.", id, roll);
 
-		/// <summary>
-		/// Add the given list of pieces to the given space.
-		/// </summary>
-		/// <param name="space">The target space (1-based).</param>
-		/// <param name="pieces">The list of pieces.</param>
-		private void AddPiecesToFront(int space, List<int> pieces)
-		{
-			// Insert the list of pieces into the target game board list.
-			gameBoard[space - 1].InsertRange(0, pieces);
-
-			// Update the location of the moved pieces.
-			foreach(var p in pieces)
+			// Find the piece on the board.
+			for (int idx = movingPiece.StartingSpace - 1; idx < numSpaces; idx++)
 			{
-				var res = Array.Find(results, r => r.Id == p);
-				res.Space = space;
+				if (gameBoard[idx].Exists(p => p.Id == id))
+				{
+					// Extract the piece and all on top of it.
+					int pos = gameBoard[idx].IndexOf(movingPiece);
+					int count = gameBoard[idx].Count - pos;
+					List<Piece> subList = gameBoard[idx].GetRange(pos, count);
+					gameBoard[idx].RemoveRange(pos, count);
+
+					// Move the pieces to their new space.
+					gameBoard[idx + roll].AddRange(subList);
+					// TODO: If Piece is refactored to track its current space,
+					// update it here.
+					// TODO: For a slight optimization, StartingSpace for each
+					// piece could be updated. This would help any carried piece
+					// that has not itself moved yet.
+
+//					Console.WriteLine("  {0} pieces were moved from space {1} to space {2}.", count, idx + 1, idx + roll + 1);
+					break;
+				}
 			}
+
+			// TODO: Check for end of game condition.
+			return false;
 		}
 
-		private void DetermineTurnOrder()
+		private int[] DetermineTurnOrder()
 		{
+			int[] turnOrder = new int[numPieces];
+			for (int i = 0; i < numPieces; i++)
+				turnOrder[i] = gamePieces[i].Id;
+
 			for (int i = 0; i < numPieces - 1; i++)
 			{
 				int pos = rng.Next(i, numPieces);
 				if (pos != i)
 				{
-					GameResults tmp = results[i];
-					results[i] = results[pos];
-					results[pos] = tmp;
+					int tmp = turnOrder[i];
+					turnOrder[i] = turnOrder[pos];
+					turnOrder[pos] = tmp;
 				}
 			}
+
+			return turnOrder;
 		}
 
 		// Public properties
 		public int NumSpaces { get { return numSpaces; }  }
-		public List<int>[] Spaces { get { return gameBoard; } }
+		public List<Piece>[] Spaces { get { return gameBoard; } }
+		public List<Piece> Pieces {  get { return gamePieces; } }
 		// TODO: Should there be a property for the results? Or should that just be returned by the corresponding methods?
     }
+
+	public class Piece
+	{
+		public int Id;
+		public int StartingSpace; // 1-based space where the piece starts.
+		public int PlacementOrder; // Do I need this? Or will order be implicit in the array/list?
+		public int FirstPlaceCount;
+		public int SecondPlaceCount;
+
+		public Piece(int id, int start)
+		{
+			Id = id;
+			StartingSpace = start;
+			FirstPlaceCount = SecondPlaceCount = 0;
+		}
+	}
 
 	public class GameResults
 	{
